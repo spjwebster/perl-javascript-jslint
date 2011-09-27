@@ -51,7 +51,22 @@ sub jslint {
     croak "usage: jslint(js_source)"
       unless defined $js_source;
     my $ctx = _get_context();
-    my $ok = $ctx->call( 'JSLINT', $js_source, \%opt );
+
+    my $js_source_str = '[' . join(',', map {
+        my $line = $_;
+        $line =~ s/\\/\\\\/g;
+        $line =~ s/\"/\\"/g;
+        '"' . $line . '"';
+    } split(/\n/, $js_source)) . ']';
+
+    my $opt_str = '{' . join(',', map {
+        $_ . ':' . ($opt{$_} ? 'true' : 'false');
+    } keys %opt) . '}';
+
+    my $ok = $ctx->eval(qq/
+        JSLINT($js_source_str,$opt_str);
+    /);
+    
     die "$@" if $@;
     if ( $ok ) {
         return;
