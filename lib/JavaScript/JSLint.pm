@@ -7,6 +7,7 @@ use warnings;
 
 use Carp;
 use JavaScript;
+use JSON qw(encode_json);
 
 use base qw( Exporter );
 
@@ -14,6 +15,27 @@ our @EXPORT = qw( jslint );
 our @EXPORT_OK = qw( jslint jslint_options );
 
 our $VERSION = '0.07';
+
+
+my %JSLINT_OPTIONS = (
+    adsafe   => {type => 'bool', desc => 'use of some browser features should be restricted'},
+    bitwise  => {type => 'bool', desc => 'bitwise operators should not be allowed'},
+    browser  => {type => 'bool', desc => 'the standard browser globals should be predefined'},
+    cap      => {type => 'bool', desc => 'upper case HTML should be allowed'},
+    debug    => {type => 'bool', desc => 'debugger statements should be allowed'},
+    eqeqeq   => {type => 'bool', desc => '=== should be required'},
+    evil     => {type => 'bool', desc => 'eval should be allowed'},
+    laxbreak => {type => 'bool', desc => 'line breaks should not be checked'},
+    nomen    => {type => 'bool', desc => 'names should be checked'},
+    passfail => {type => 'bool', desc => 'the scan should stop on first error'},
+    plusplus => {type => 'bool', desc => 'increment/decrement should not be allowed'},
+    rhino    => {type => 'bool', desc => 'the Rhino environment globals should be predefined'},
+    undef    => {type => 'bool', desc => 'undefined variables are errors'},
+    white    => {type => 'bool', desc => 'strict whitespace rules apply'},
+    widget   => {type => 'bool', desc => 'the Yahoo Widgets globals should be predefined'},
+);
+
+
 
 {
     my $ctx;
@@ -52,16 +74,19 @@ sub jslint {
       unless defined $js_source;
     my $ctx = _get_context();
 
-    my $js_source_str = '[' . join(',', map {
-        my $line = $_;
-        $line =~ s/\\/\\\\/g;
-        $line =~ s/\"/\\"/g;
-        '"' . $line . '"';
-    } split(/\n/, $js_source)) . ']';
+    my $js_source_str = encode_json(
+        [ split(/\n/, $js_source) ]
+    );
 
-    my $opt_str = '{' . join(',', map {
-        $_ . ':' . ($opt{$_} ? 'true' : 'false');
-    } keys %opt) . '}';
+    my $opt_str = encode_json( { 
+        map {
+            $_ => (
+                $JSLINT_OPTIONS{$_}->{type} eq 'bool' 
+                    ? ( $opt{$_} ? JSON::true : JSON::false )
+                    : $opt{$_}
+            );
+        } keys %opt
+    } );
 
     my $ok = $ctx->eval(qq/
         JSLINT($js_source_str,$opt_str);
@@ -82,23 +107,9 @@ sub jslint {
 
 # TODO: generate this list by parsing the source below.
 sub jslint_options {
-    return (
-        adsafe   => 'use of some browser features should be restricted',
-        bitwise  => 'bitwise operators should not be allowed',
-        browser  => 'the standard browser globals should be predefined',
-        cap      => 'upper case HTML should be allowed',
-        debug    => 'debugger statements should be allowed',
-        eqeqeq   => '=== should be required',
-        evil     => 'eval should be allowed',
-        laxbreak => 'line breaks should not be checked',
-        nomen    => 'names should be checked',
-        passfail => 'the scan should stop on first error',
-        plusplus => 'increment/decrement should not be allowed',
-        rhino    => 'the Rhino environment globals should be predefined',
-        undef    => 'undefined variables are errors',
-        white    => 'strict whitespace rules apply',
-        widget   => 'the Yahoo Widgets globals should be predefined',
-    );
+    return map {
+        $_ => $JSLINT_OPTIONS{$_}->{desc}
+    } keys %JSLINT_OPTIONS;
 }
 
 1;
