@@ -15,5 +15,6 @@ Module::Build->new(
         'File::Basename' => 0,
         'Getopt::Long'   => 0,
         'JavaScript'     => 0,
+        'JSON'           => 0,
     },
 )->create_build_script;
