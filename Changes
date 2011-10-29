@@ -3,7 +3,10 @@ Revision history for Perl extension JavaScript::Lint.
 0.07  TBD
     - Worked around an apparent bug in the JavaScript module when compiled with
       libjs >= 1.7.0.
-    - ...
+    - Updated to latest version of JSLint (2011-10-23). This switches most 
+      options from being restrictive to being permissive (and consequently the
+      default bahaviour is restrictive rather than permissive). Also adds a 
+      whole bunch of new options and changes the output significantly.
 
 0.06  Sat Apr 28 10:31:06 BST 2007
     - Update to latest version of JSLint (2007-04-26).  This changes some of
