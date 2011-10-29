@@ -69,16 +69,6 @@ my %JSLINT_OPTIONS = (
     }
 }
 
-# Make them all one-based as would be expected.
-sub _fix_line_and_char_numbers {
-    my ( $err ) = @_;
-    my %new_err;
-    @new_err{ keys %$err } = values %$err;
-    $new_err{ line }++;
-    $new_err{ character }++;
-    return \%new_err;
-}
-
 sub _make_fatal_error {
     my ( $err ) = @_;
     my %newerr = %$err;
@@ -293,6 +283,7 @@ Dominic Mitchell, E<lt>cpan (at) happygiraffe.netE<gt>
 =head1 COPYRIGHT AND LICENSE
 
 Copyright (C) 2006 by Dominic Mitchell
+Portions copyright (c) 2011 by Steve Webster
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions
