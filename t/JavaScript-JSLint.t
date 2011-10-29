@@ -3,7 +3,7 @@
 use strict;
 
 use Data::Dumper;
-use Test::More tests => 12;
+use Test::More tests => 17;
 
 BEGIN {
     use_ok( 'JavaScript::JSLint' );
@@ -21,42 +21,88 @@ my @tests = (
     },
     {
         name     => 'basic',
-          js     => 'var two = 1+1;',
+          js     => 'var two = 1 + 1;',
           opts   => {},
           errors => [],
     },
     {
-        name   => 'missing semicolon',
-        js     => 'var two = 1+1',
+        name   => 'strict whitespace',
+        js     => 'var two = 1+1;',
         opts   => {},
         errors => [
             {
-                'character' => 14,
-                'evidence'  => 'var two = 1+1',
                 'id'        => '(error)',
                 'line'      => 1,
-                'reason'    => "Missing ';'"
+                'character' => 12,
+                'evidence'  => 'var two = 1+1;',
+                'reason'    => "Missing space between '1' and '+'.",
+                'raw'       => "Missing space between '{a}' and '{b}'.",
+                'a'         => '1',
+                'b'         => '+',
+                'c'         => undef,
+                'd'         => undef,
+            },
+            {
+                'id'        => '(error)',
+                'line'      => 1,
+                'character' => 13,
+                'evidence'  => 'var two = 1+1;',
+                'reason'    => "Missing space between '+' and '1'.",
+                'raw'       => "Missing space between '{a}' and '{b}'.",
+                'a'         => '+',
+                'b'         => '1',
+                'c'         => undef,
+                'd'         => undef,
+            },
+        ],
+    },
+    {
+        name   => 'missing semicolon',
+        js     => 'var two = 1 + 1',
+        opts   => {},
+        errors => [
+            {
+                'id'        => '(error)',
+                'line'      => 1,
+                'character' => 16,
+                'evidence'  => 'var two = 1 + 1',
+                'reason'    => "Expected ';' and instead saw '(end)'.",
+                'raw'       => "Expected '{a}' and instead saw '{b}'.",
+                'a'         => ';',
+                'b'         => '(end)',
+                'c'         => undef,
+                'd'         => undef,
             }
         ],
     },
     {
         name   => 'missing semicolon and late declaration',
-        js     => 'two = 1+1;var two',
+        js     => 'two = 1 + 1; var two',
         opts   => {},
         errors => [
             {
-                'character' => 15,
-                'evidence'  => 'two = 1+1;var two',
                 'id'        => '(error)',
                 'line'      => 1,
-                'reason'    => 'Var two was used before it was declared.'
+                'character' => 1,
+                'evidence'  => 'two = 1 + 1; var two',
+                'reason'    => "'two' was used before it was defined.",
+                'raw'       => "'{a}' was used before it was defined.",
+                'a'         => 'two',
+                'b'         => undef,
+                'c'         => undef,
+                'd'         => undef,
             },
             {
-                'character' => 18,
-                'evidence'  => 'two = 1+1;var two',
                 'id'        => '(error)',
                 'line'      => 1,
-                'reason'    => "Missing ';'",
+                'character' => 21,
+                'evidence'  => 'two = 1 + 1; var two',
+                'reason'    => "Expected ';' and instead saw '(end)'.",
+                'raw'       => "Expected '{a}' and instead saw '{b}'.",
+                'a'         => ';',
+                'b'         => '(end)',
+                'c'         => undef,
+                'd'         => undef,
             },
         ],
     },
@@ -66,60 +112,129 @@ my @tests = (
         opts   => {},
         errors => [
             {
-                'character' => 1,
-                'evidence'  => '/* nested',
                 'id'        => '(error)',
-                'line'      => 1,
-                'reason'    => 'Nested comment.'
+                'line'      => 2,
+                'character' => 3,
+                'evidence'  => '/* comment */',
+                'reason'    => 'Nested comment.',
+                'raw'       => 'Nested comment.',
+                'a'         => undef,
+                'b'         => undef,
+                'c'         => undef,
+                'd'         => undef,
+
             },
             {
-                # character, line, evidence should all be copied from previous
-                # err.
-                'character' => 1,
-                'evidence'  => '/* nested',
-                'id'        => '(error)',
-                'line'      => 1,
-                'reason'    => 'Stopping, unable to continue. (0% scanned)'
+                'line'      => 2,
+                'character' => 3,
+                'reason'    => 'Stopping.  (100% scanned).'
             }
         ],
     },
     {
-        name   => 'allow undefined variables',
+        name   => 'disallow undefined variables by default',
         js     => 'alert(42);',
         opts   => {},
-        errors => [],
-    },
-    {
-        name   => 'disallow undefined variables',
-        js     => 'alert(42);',
-        opts   => { 'undef' => 1 },
         errors => [
             {
-                'character' => 1,
-                'evidence'  => 'alert(42);',
                 'id'        => '(error)',
                 'line'      => 1,
-                'reason'    => 'Undefined function: alert',
+                'character' => 1,
+                'evidence'  => 'alert(42);',
+                'reason'    => "'alert' was used before it was defined.",
+                'raw'       => "'{a}' was used before it was defined.",
+                'a'         => 'alert',
+                'b'         => undef,
+                'c'         => undef,
+                'd'         => undef,
             }
         ],
     },
     {
-        name   => 'random options allowed',
+        name   => 'allow undefined variables with undef option',
         js     => 'alert(42);',
-        opts   => { xyzzy => 1 },
+        opts   => { 'undef' => 1 },
         errors => [],
     },
     {
-        name   => 'embedded html',
+        name   => 'allow predefined variables with predef array',
+        js     => 'alert(42);',
+        opts   => { 'predef' => ['alert'] },
+        errors => [],
+    },
+    {
+        name   => 'allow predefined variables with predef option as object',
+        js     => 'alert(42);',
+        opts   => { 
+            'predef' => {
+                'alert' => 0,
+            },
+        },
+        errors => [],
+    },
+    {
+        name   => 'allow overwrite of predefined variables with truthy value',
+        js     => 'alert = "foo";',
+        opts   => { 
+            'predef' => {
+                'alert' => 1,
+            },
+        },
+        errors => [],
+    },
+    {
+        name   => 'disallow overwrite of predefined variables with false value',
+        js     => 'alert = "foo";',
+        opts   => { 
+            'predef' => {
+                'alert' => 0,
+            },
+        },
+        errors => [
+            {
+                'id'        => '(error)',
+                'line'      => 1,
+                'character' => 1,
+                'evidence'  => 'alert = "foo";',
+                'reason'    => 'Read only.',
+                'raw'       => 'Read only.',
+                'a'         => 'alert',
+                'b'         => undef,
+                'c'         => undef,
+                'd'         => undef,
+            },
+        ],
+    },
+    {
+        name   => 'unknown options allowed',
+        js     => 'alert(42);',
+        opts   => { xyzzy => 1, devel => 1 },
+        errors => [],
+    },
+    {
+        name   => 'embedded in html',
         js     => '<html><head><script type="text/javascript">alert(42);</script></head></html>',
-        opts   => {},
+        opts   => { devel => 1, white => 1 },
         errors => [],
     },
     {
-        name   => 'embedded html in attribute',
+        name   => 'DOM Level 0 event handlers not allowed',
         js     => '<html><body><a onclick="alert(42);">click here</a></body></html>',
-        opts   => {},
-        errors => [],
+        opts   => { devel => 1, white => 1 },
+        errors => [
+            {
+                'id'        => '(error)',
+                'line'      => 1,
+                'character' => 23,
+                'evidence'  => '<html><body><a onclick="alert(42);">click here</a></body></html>',
+                'reason'    => 'Avoid HTML event handlers.',
+                'raw'       => 'Avoid HTML event handlers.',
+                'a'         => '=',
+                'b'         => undef,
+                'c'         => undef,
+                'd'         => undef,
+            }
+        ],
     },
 );
 
