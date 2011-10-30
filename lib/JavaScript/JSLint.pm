@@ -18,7 +18,7 @@ our $VERSION = '0.07';
 
 
 my %JSLINT_OPTIONS = (
-    adsafe     => {type => 'bool', desc => 'enforce ADsafe rules'},
+    adsafe     => {type => 'bool', desc => 'ADsafe rules should be enforced'},
     bitwise    => {type => 'bool', desc => 'bitwise operators should be allowed'},
     browser    => {type => 'bool', desc => 'the standard browser globals should be predefined'},
     confusion  => {type => 'bool', desc => 'types can be used inconsistently'},
@@ -40,7 +40,7 @@ my %JSLINT_OPTIONS = (
     passfail   => {type => 'bool', desc => 'the scan should stop on first error'},
     plusplus   => {type => 'bool', desc => 'increment/decrement should be allowed'},
     properties => {type => 'bool', desc => 'all property names must be declared with /*properties*/'},
-    predef     => {type => 'list', desc => 'predefined global variables'},
+    predef     => {type => 'hash', desc => 'predefine global variables'},
     regexp     => {type => 'bool', desc => 'the . should be allowed in regexp literals'},
     rhino      => {type => 'bool', desc => 'the Rhino environment globals should be predefined'},
     'undef'    => {type => 'bool', desc => 'variables can be declared out of order'},
@@ -98,7 +98,7 @@ sub jslint {
     my $opt_str = encode_json( { 
         map {
             $_ => (
-                $JSLINT_OPTIONS{$_}->{type} eq 'bool' 
+                ($JSLINT_OPTIONS{$_} && $JSLINT_OPTIONS{$_}->{type} eq 'bool')
                     ? ( $opt{$_} ? JSON::true : JSON::false )
                     : $opt{$_}
             );
@@ -126,10 +126,12 @@ sub jslint {
 
 # TODO: generate this list by parsing the source below.
 sub jslint_options {
+    my $want_full_options = shift;
     return map {
-        $_ => $JSLINT_OPTIONS{$_}->{desc}
+        $_ => $want_full_options ? $JSLINT_OPTIONS{$_} : $JSLINT_OPTIONS{$_}->{desc}
     } keys %JSLINT_OPTIONS;
 }
+
 
 1;
 
@@ -195,66 +197,149 @@ checked in the usual manner.  The HTML code must be a full web page,
 i.e. start with C<< <html> >>.
 
 You can optionally pass in a second parameter to influence how JSLint works.
-The following keys are used.  All take a boolean value, and each one is false
-by default.
+The following keys are used. Most take a boolean value, which is false by 
+default.
 
 =over 4
 
+=item I<adsafe>
+
+true, if ADsafe rules should be enforced
+
 =item I<bitwise>
 
-true if bitwise operators should not be allowed
+true, if bitwise operators should be allowed
 
 =item I<browser>
 
-true if the standard browser globals should be predefined
+true, if the standard browser globals should be predefined
 
-=item I<cap>
+=item I<confusion>
 
-true if upper case HTML should be allowed
+true, if types can be used inconsistently
+
+=item I<continue>
+
+true, if the continuation statement should be tolerated
 
 =item I<debug>
 
-true if debugger statements should be allowed
+true, if debugger statements should be allowed
 
-=item I<eqeqeq>
+=item I<devel>
 
-true if === should be required
+true, if logging should be allowed (console, alert, etc.)
+
+=item I<eqeq>
+
+true, if C<==> should be allowed
+
+=item I<es5>
+
+true, if ES5 syntax should be allowed
 
 =item I<evil>
 
-true if eval should be allowed
+true, if eval should be allowed
 
-=item I<laxbreak>
+=item I<forin>
 
-true if line breaks should not be checked
+true, if C<for in> statements need not filter
+
+=item I<fragment>
+
+true, if HTML fragments should be allowed
+
+=item I<indent>
+
+the indentation factor
+
+=item I<maxerr>
+
+the maximum number of errors to allow
+
+=item I<maxlen>
+
+the maximum length of a source line
+
+=item I<newcap>
+
+true, if constructor names capitalization is ignored
+
+=item I<node>
+
+true, if Node.js globals should be predefined
 
 =item I<nomen>
 
-true if names should be checked
+true, if names may have dangling C<_>
+
+=item I<on>
+
+true, if HTML event handlers should be allowed
 
 =item I<passfail>
 
-true if the scan should stop on first error
+true, if the scan should stop on first error
 
 =item I<plusplus>
 
-true if increment/decrement should not be allowed
+true, if increment/decrement should be allowed
+
+=item I<properties>
+
+true, if all property names must be declared with C</*properties*/>
+
+=item I<predef>
+
+predefine variables as globals. A reference to either an array or a hash. If an
+arrayref, the elements of the array should be the names of the variables to be 
+predefined. If a hashref, the keys are the variable names to be defined and the
+values indicate whether a variable is assignable (C<1>) or not (C<0>).
+
+=item I<regexp>
+
+true, if C<.> and C<[^...]> should be allowed in regexp literals
 
 =item I<rhino>
 
-true if the Rhino environment globals should be predefined
+true, if the Rhino environment globals should be predefined
 
 =item I<undef>
 
-true if undefined variables are errors
+true, if variables can be declared out of order
+
+=item I<unparam>
+
+true, if unused parameters should be tolerated
+
+=item I<safe>
+
+true, if use of some browser features should be restricted
+
+=item I<sloppy>
+
+true, if the \'use strict\'; pragma is optional
+
+=item I<sub>
+
+true, if all forms of subscript notation are tolerated
+
+=item I<vars>
+
+true, if multiple C<var> statements per function should be allowed
 
 =item I<white>
 
-true if strict whitespace rules apply
+true, if sloppy whitespace is tolerated
 
 =item I<widget>
 
-true if the Yahoo Widgets globals should be predefined
+true, if the Yahoo Widgets globals should be predefined
+
+=item I<windows>
+
+true, if MS Windows-specific globals should be predefined
 
 =back
 
@@ -280,10 +365,13 @@ JavaScript lint tool.
 
 Dominic Mitchell, E<lt>cpan (at) happygiraffe.netE<gt>
 
+Steve Webster, E<lt>cpan (at) statichtml.comE<gt>
+
 =head1 COPYRIGHT AND LICENSE
 
 Copyright (C) 2006 by Dominic Mitchell
-Portions copyright (c) 2011 by Steve Webster
+
+Portions copyright (C) 2011 by Steve Webster
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions
