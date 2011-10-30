@@ -7,7 +7,7 @@ use Module::Build;
 Module::Build->new(
     module_name        => 'JavaScript::JSLint',
     license            => 'bsd',
-    dist_author        => 'Dominic Mitchell <cpan (at) happygiraffe.net>',
+    dist_author        => 'Steve Webster <cpan (at) statichtml.com>',
     script_files       => ['bin/jslint'],
     create_makefile_pl => 'passthrough',
     add_to_cleanup     => ['JavaScript-JSLint-*'],
