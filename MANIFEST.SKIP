@@ -3,6 +3,8 @@
 \bCVS\b
 ,v$
 \B\.svn\b
+\B\.git\b
+\B\.gitignore\b
 
 # Makemaker generated files and dirs.
 ^MANIFEST\.
@@ -19,3 +21,5 @@
 # Module::Build bits and bobs.
 ^_build/
 ^Build$
+^MYMETA\.yml$
+^MYMETA\.json$
